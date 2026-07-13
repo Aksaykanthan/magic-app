@@ -115,6 +115,7 @@ docker-compose.yml            # postgres / redis / minio services
 
 ---
 
+<!-- MODULE:auth:start -->
 ## 4. Auth rules
 
 - **Server instance** — `lib/auth.ts` exports `auth = betterAuth({...})`: Prisma adapter (`provider: "postgresql"`), Redis-backed `secondaryStorage` (session lookups skip Postgres), email/password enabled (min length 8, `autoSignIn: true`), optional GitHub/Google OAuth (enabled only when their env vars are set), 30-day sessions with a 5-minute cookie cache, and the `nextCookies()` plugin so Server Actions/Route Handlers can set cookies. It also exports `type Session = typeof auth.$Infer.Session`.
@@ -170,6 +171,7 @@ Defined in `lib/trpc/init.ts`:
 ### Redis-backed session cache
 
 better-auth's `secondaryStorage` option (in `lib/auth.ts`) is wired to the `redis` singleton from `lib/redis.ts` (`get`/`set`/`delete`), so session reads/writes go to Redis instead of Postgres on the hot path. Combined with the 5-minute `cookieCache`, most requests avoid both a DB and a Redis round trip. This is why `proxy.ts` can afford to call `auth.api.getSession` on every matched request without a meaningful latency hit.
+<!-- MODULE:auth:end -->
 
 ---
 
@@ -232,6 +234,7 @@ bun run db:generate   # prisma generate — regenerate the Prisma client after a
 
 ---
 
+<!-- MODULE:trpc:start -->
 ## 7. tRPC conventions
 
 - **One router file per domain** under `lib/trpc/routers/` (e.g. `post.ts`, `user.ts`, `billing.ts`). Each exports `createTRPCRouter({ ... })` built from `publicProcedure`/`protectedProcedure` (from `lib/trpc/init.ts`), with Zod schemas for input validation.
@@ -289,6 +292,7 @@ bun run db:generate   # prisma generate — regenerate the Prisma client after a
   ```
 
 - Use the **RSC prefetch pattern** for the initial data a page needs (avoids a client-side loading spinner on first paint); use the **client hook pattern** for anything that mutates, refetches, or depends on client-only state.
+<!-- MODULE:trpc:end -->
 
 ---
 
@@ -316,6 +320,7 @@ All variables live in `.env.example` at the repo root; copy it to `.env` and fil
 
 ---
 
+<!-- MODULE:docker:start -->
 ## 9. Docker services
 
 `docker-compose.yml` defines three local services (project name `magic-nextjs-template`):
@@ -333,6 +338,7 @@ bun run docker:up     # docker compose up -d      — start postgres/redis/minio
 bun run docker:down    # docker compose down        — stop and remove the containers (volumes persist)
 bun run docker:logs    # docker compose logs -f      — tail logs from all three services
 ```
+<!-- MODULE:docker:end -->
 
 ---
 

@@ -1,5 +1,6 @@
 import "server-only";
 import Redis from "ioredis";
+import { env } from "@/lib/env";
 
 /**
  * Redis singleton (ioredis). Backs rate limiting, caching, and the
@@ -11,7 +12,7 @@ const globalForRedis = globalThis as unknown as {
 
 export const redis =
   globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
+  new Redis(env.REDIS_URL ?? "redis://localhost:6379", {
     maxRetriesPerRequest: 3,
     // Connect lazily — Next.js imports route modules during `next build` to
     // collect metadata even for statically-rendered pages, which would
@@ -19,7 +20,7 @@ export const redis =
     lazyConnect: true,
   });
 
-if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
+if (env.NODE_ENV !== "production") globalForRedis.redis = redis;
 
 /** JSON convenience helpers on top of the raw string client. */
 export async function cacheGet<T>(key: string): Promise<T | null> {

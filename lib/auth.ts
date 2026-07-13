@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
+import { env } from "@/lib/env";
 
 /**
  * better-auth server instance. Mounted at app/api/auth/[...all]/route.ts.
@@ -26,19 +27,19 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   socialProviders: {
-    ...(process.env.GITHUB_CLIENT_ID
+    ...(env.GITHUB_CLIENT_ID
       ? {
           github: {
-            clientId: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+            clientId: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET!,
           },
         }
       : {}),
-    ...(process.env.GOOGLE_CLIENT_ID
+    ...(env.GOOGLE_CLIENT_ID
       ? {
           google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET!,
           },
         }
       : {}),

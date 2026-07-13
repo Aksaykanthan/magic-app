@@ -1,4 +1,4 @@
-import { ModeToggle } from "@/components/mode-toggle";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,7 +23,7 @@ export function SiteHeader({ title }: { title?: string }) {
         </Breadcrumb>
       ) : null}
       <div className="ml-auto flex items-center gap-2">
-        <ModeToggle />
+        <ThemeSwitcher />
       </div>
     </header>
   );

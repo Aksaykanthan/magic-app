@@ -117,6 +117,130 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ---------------------------------------------------------------------------
+ * Color theme presets (module: theming — see lib/themes.ts + components/theme-switcher.tsx)
+ *
+ * `:root`/`.dark` above are the "zinc" (neutral) base and stay unchanged —
+ * every preset below overrides ONLY the accent tokens (primary, ring, the
+ * sidebar-primary pair) so background/foreground/border/card stay identical
+ * across themes and only the "brand color" changes. This keeps every preset
+ * visually consistent with the rest of the UI kit instead of also dragging
+ * in a different neutral tint per preset.
+ *
+ * Values are lifted from shadcn/ui's official theme registry
+ * (https://ui.shadcn.com/r/themes.css) so they're proven-accessible
+ * (contrast-checked) pairings, not invented on the spot.
+ *
+ * Selected via `data-theme="<id>"` on `<html>` — see
+ * providers/color-theme-provider.tsx, which sets the attribute and persists
+ * the choice to localStorage (SSR-safe, no flash-of-wrong-theme).
+ * `bun run setup` writes the chosen preset as `defaultTheme` in that
+ * provider at install time; end users can still switch it live via the
+ * theme switcher regardless of that default.
+ * --------------------------------------------------------------------- */
+
+[data-theme="red"] {
+  --primary: hsl(0 72.2% 50.6%);
+  --primary-foreground: hsl(0 85.7% 97.3%);
+  --ring: hsl(0 72.2% 50.6%);
+  --sidebar-primary: hsl(0 72.2% 50.6%);
+  --sidebar-primary-foreground: hsl(0 85.7% 97.3%);
+  --sidebar-ring: hsl(0 72.2% 50.6%);
+}
+.dark[data-theme="red"] {
+  --primary: hsl(0 72.2% 50.6%);
+  --primary-foreground: hsl(0 85.7% 97.3%);
+  --ring: hsl(0 72.2% 50.6%);
+  --sidebar-primary: hsl(0 72.2% 50.6%);
+  --sidebar-primary-foreground: hsl(0 85.7% 97.3%);
+  --sidebar-ring: hsl(0 72.2% 50.6%);
+}
+
+[data-theme="rose"] {
+  --primary: hsl(346.8 77.2% 49.8%);
+  --primary-foreground: hsl(355.7 100% 97.3%);
+  --ring: hsl(346.8 77.2% 49.8%);
+  --sidebar-primary: hsl(346.8 77.2% 49.8%);
+  --sidebar-primary-foreground: hsl(355.7 100% 97.3%);
+  --sidebar-ring: hsl(346.8 77.2% 49.8%);
+}
+.dark[data-theme="rose"] {
+  --primary: hsl(346.8 77.2% 49.8%);
+  --primary-foreground: hsl(355.7 100% 97.3%);
+  --ring: hsl(346.8 77.2% 49.8%);
+  --sidebar-primary: hsl(346.8 77.2% 49.8%);
+  --sidebar-primary-foreground: hsl(355.7 100% 97.3%);
+  --sidebar-ring: hsl(346.8 77.2% 49.8%);
+}
+
+[data-theme="orange"] {
+  --primary: hsl(24.6 95% 53.1%);
+  --primary-foreground: hsl(60 9.1% 97.8%);
+  --ring: hsl(24.6 95% 53.1%);
+  --sidebar-primary: hsl(24.6 95% 53.1%);
+  --sidebar-primary-foreground: hsl(60 9.1% 97.8%);
+  --sidebar-ring: hsl(24.6 95% 53.1%);
+}
+.dark[data-theme="orange"] {
+  --primary: hsl(20.5 90.2% 48.2%);
+  --primary-foreground: hsl(60 9.1% 97.8%);
+  --ring: hsl(20.5 90.2% 48.2%);
+  --sidebar-primary: hsl(20.5 90.2% 48.2%);
+  --sidebar-primary-foreground: hsl(60 9.1% 97.8%);
+  --sidebar-ring: hsl(20.5 90.2% 48.2%);
+}
+
+[data-theme="green"] {
+  --primary: hsl(142.1 76.2% 36.3%);
+  --primary-foreground: hsl(355.7 100% 97.3%);
+  --ring: hsl(142.1 76.2% 36.3%);
+  --sidebar-primary: hsl(142.1 76.2% 36.3%);
+  --sidebar-primary-foreground: hsl(355.7 100% 97.3%);
+  --sidebar-ring: hsl(142.1 76.2% 36.3%);
+}
+.dark[data-theme="green"] {
+  --primary: hsl(142.1 70.6% 45.3%);
+  --primary-foreground: hsl(144.9 80.4% 10%);
+  --ring: hsl(142.4 71.8% 29.2%);
+  --sidebar-primary: hsl(142.1 70.6% 45.3%);
+  --sidebar-primary-foreground: hsl(144.9 80.4% 10%);
+  --sidebar-ring: hsl(142.4 71.8% 29.2%);
+}
+
+[data-theme="blue"] {
+  --primary: hsl(221.2 83.2% 53.3%);
+  --primary-foreground: hsl(210 40% 98%);
+  --ring: hsl(221.2 83.2% 53.3%);
+  --sidebar-primary: hsl(221.2 83.2% 53.3%);
+  --sidebar-primary-foreground: hsl(210 40% 98%);
+  --sidebar-ring: hsl(221.2 83.2% 53.3%);
+}
+.dark[data-theme="blue"] {
+  --primary: hsl(217.2 91.2% 59.8%);
+  --primary-foreground: hsl(222.2 47.4% 11.2%);
+  --ring: hsl(224.3 76.3% 48%);
+  --sidebar-primary: hsl(217.2 91.2% 59.8%);
+  --sidebar-primary-foreground: hsl(222.2 47.4% 11.2%);
+  --sidebar-ring: hsl(224.3 76.3% 48%);
+}
+
+[data-theme="violet"] {
+  --primary: hsl(262.1 83.3% 57.8%);
+  --primary-foreground: hsl(210 20% 98%);
+  --ring: hsl(262.1 83.3% 57.8%);
+  --sidebar-primary: hsl(262.1 83.3% 57.8%);
+  --sidebar-primary-foreground: hsl(210 20% 98%);
+  --sidebar-ring: hsl(262.1 83.3% 57.8%);
+}
+.dark[data-theme="violet"] {
+  --primary: hsl(263.4 70% 50.4%);
+  --primary-foreground: hsl(210 20% 98%);
+  --ring: hsl(263.4 70% 50.4%);
+  --sidebar-primary: hsl(263.4 70% 50.4%);
+  --sidebar-primary-foreground: hsl(210 20% 98%);
+  --sidebar-ring: hsl(263.4 70% 50.4%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

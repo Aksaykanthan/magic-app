@@ -1,6 +1,7 @@
 import "server-only";
 import type { Readable } from "node:stream";
 import { Client } from "minio";
+import { env } from "@/lib/env";
 
 /**
  * MinIO singleton — S3-compatible object storage (docker-compose service:
@@ -13,16 +14,16 @@ const globalForMinio = globalThis as unknown as {
 export const minioClient =
   globalForMinio.minio ??
   new Client({
-    endPoint: process.env.MINIO_ENDPOINT ?? "localhost",
-    port: Number(process.env.MINIO_PORT ?? 9000),
-    useSSL: process.env.MINIO_USE_SSL === "true",
-    accessKey: process.env.MINIO_ACCESS_KEY ?? "minioadmin",
-    secretKey: process.env.MINIO_SECRET_KEY ?? "minioadmin",
+    endPoint: env.MINIO_ENDPOINT ?? "localhost",
+    port: env.MINIO_PORT ?? 9000,
+    useSSL: env.MINIO_USE_SSL ?? false,
+    accessKey: env.MINIO_ACCESS_KEY ?? "minioadmin",
+    secretKey: env.MINIO_SECRET_KEY ?? "minioadmin",
   });
 
-if (process.env.NODE_ENV !== "production") globalForMinio.minio = minioClient;
+if (env.NODE_ENV !== "production") globalForMinio.minio = minioClient;
 
-export const DEFAULT_BUCKET = process.env.MINIO_BUCKET ?? "app-uploads";
+export const DEFAULT_BUCKET = env.MINIO_BUCKET ?? "app-uploads";
 
 /** Ensures the default bucket exists. Safe to call repeatedly (idempotent). */
 export async function ensureBucket(bucket = DEFAULT_BUCKET): Promise<void> {

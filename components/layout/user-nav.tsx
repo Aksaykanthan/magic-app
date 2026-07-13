@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
+import { useAuth } from "@/providers/auth-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,10 +31,10 @@ function getInitials(name: string) {
 }
 
 export function UserNav() {
-  const { data, isPending } = useSession();
+  const { session, isPending } = useAuth();
   const router = useRouter();
 
-  if (isPending || !data?.user) {
+  if (isPending || !session?.user) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -49,7 +50,7 @@ export function UserNav() {
     );
   }
 
-  const { user } = data;
+  const { user } = session;
   const initials = getInitials(user.name);
 
   const handleLogOut = async () => {

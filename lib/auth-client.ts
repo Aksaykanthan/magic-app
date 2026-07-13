@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { env } from "@/lib/env";
 
 /**
  * Client-side better-auth instance for use in Client Components
@@ -6,7 +7,7 @@ import { createAuthClient } from "better-auth/react";
  * `auth.api.*` from `@/lib/auth` directly instead.
  */
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
+  baseURL: env.NEXT_PUBLIC_APP_URL,
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

@@ -8,6 +8,7 @@ import { useState } from "react";
 import superjson from "superjson";
 import { makeQueryClient } from "@/lib/trpc/query-client";
 import type { AppRouter } from "@/lib/trpc/routers/_app";
+import { env } from "@/lib/env";
 
 export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
 
@@ -21,8 +22,10 @@ function getQueryClient() {
 
 function getUrl() {
   if (typeof window !== "undefined") return "/api/trpc";
+  // VERCEL_URL is platform-injected at build/runtime by Vercel — not part of
+  // our validated env.ts contract, so it's read directly here.
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/trpc`;
-  return `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/trpc`;
+  return `${env.NEXT_PUBLIC_APP_URL}/api/trpc`;
 }
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
