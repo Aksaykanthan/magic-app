@@ -2,6 +2,9 @@
   "name": "magic-nextjs-template",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "create-magic-app": "./create-magic-app/bin/create-magic-app.mjs"
+  },
   "scripts": {
     "setup": "tsx scripts/setup.ts",
     "dev": "next dev",
