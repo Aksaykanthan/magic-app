@@ -42,6 +42,9 @@ const NO_GIT = ARGV.includes("--no-git");
 
 type PackageManager = "bun" | "pnpm" | "npm";
 type ModuleId = "auth" | "trpc" | "redis" | "minio" | "docker";
+type AuthMethod = "username" | "google" | "captcha";
+type MailerProvider = "resend" | "smtp" | "console" | "none";
+type SkillId = "better-auth" | "shadcn-ui" | "ui-design" | "backend-conventions" | "frontend-conventions";
 
 // ---------------------------------------------------------------------------
 // Small clack helpers
@@ -119,12 +122,73 @@ function removeDependencies(depNames: string[], dryRun: boolean): string[] {
     }
   }
 
+  if (pkg.devDependencies) {
+    for (const dep of depNames) {
+      if (dep in pkg.devDependencies) {
+        delete pkg.devDependencies[dep];
+        removed.push(dep);
+      }
+    }
+  }
+
   if (removed.length > 0 && !dryRun) {
     fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
   }
 
   return removed;
 }
+
+// ---------------------------------------------------------------------------
+// Optional-feature marker surgery. A marker pair removes the marker lines and
+// every line between them. The loop intentionally handles repeated blocks in
+// a single file (e.g. `captcha` appears in imports, request options, and JSX).
+// ---------------------------------------------------------------------------
+
+export function stripMagicBlocks(source: string, key: string): string {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `^[^\\r\\n]*MAGIC:${escapedKey}:start[^\\r\\n]*\\r?\\n[\\s\\S]*?^[^\\r\\n]*MAGIC:${escapedKey}:end[^\\r\\n]*(?:\\r?\\n|$)`,
+    "gm",
+  );
+  return source.replace(pattern, "");
+}
+
+function stripMagicBlocksFromFile(relPath: string, key: string, dryRun: boolean): boolean {
+  const filePath = path.join(ROOT, relPath);
+  if (!fs.existsSync(filePath)) return false;
+  const original = fs.readFileSync(filePath, "utf8");
+  const updated = stripMagicBlocks(original, key);
+  if (updated === original) return false;
+  if (!dryRun) fs.writeFileSync(filePath, updated, "utf8");
+  return true;
+}
+
+/**
+ * Username-off is a content swap rather than a deletion: the enabled login
+ * field accepts an identifier, while the disabled form must validate/render a
+ * strict email field. Keep the full template compiling before setup runs.
+ */
+function downgradeLoginFormToEmailOnly(dryRun: boolean): boolean {
+  const filePath = path.join(ROOT, "components/auth/login-form.tsx");
+  if (!fs.existsSync(filePath)) return false;
+  const original = fs.readFileSync(filePath, "utf8");
+  let updated = original.replace(
+    'identifier: z.string().min(1, "Enter your email or username."),',
+    'identifier: z.string().email("Enter a valid email address."),',
+  );
+  updated = updated.replace(
+    '<Label htmlFor="login-identifier">Email or username</Label>',
+    '<Label htmlFor="login-identifier">Email</Label>',
+  );
+  updated = updated.replace(
+    'type="text"\n            autoComplete="username"',
+    'type="email"\n            autoComplete="email"',
+  );
+  if (updated === original) return false;
+  if (!dryRun) fs.writeFileSync(filePath, updated, "utf8");
+  return true;
+}
+
 
 // ---------------------------------------------------------------------------
 // lib/auth.ts surgery — strip the Redis-backed secondaryStorage block when
@@ -372,16 +436,14 @@ function dropAuthRedisDependency(dryRun: boolean): boolean {
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// .env.example generation
-// ---------------------------------------------------------------------------
-
 export function buildEnvExample(opts: {
   keepAuth: boolean;
   keepDatabase: boolean;
   keepRedis: boolean;
   keepMinio: boolean;
   keepDockerCompose: boolean;
+  authMethods: Set<AuthMethod>;
+  mailerProvider: MailerProvider;
 }): string {
   const lines: string[] = [
     "# ---------------------------------------------------------------------------",
@@ -436,12 +498,28 @@ export function buildEnvExample(opts: {
   if (opts.keepAuth) {
     lines.push(
       "",
-      "# Optional OAuth providers (leave blank to disable in lib/auth.ts)",
+      "# Optional GitHub OAuth (leave blank to disable)",
       'GITHUB_CLIENT_ID=""',
       'GITHUB_CLIENT_SECRET=""',
-      'GOOGLE_CLIENT_ID=""',
-      'GOOGLE_CLIENT_SECRET=""',
     );
+    if (opts.authMethods.has("google")) {
+      lines.push('GOOGLE_CLIENT_ID=""', 'GOOGLE_CLIENT_SECRET=""');
+    }
+    if (opts.authMethods.has("captcha")) {
+      lines.push(
+        "",
+        "# Cloudflare Turnstile",
+        'NEXT_PUBLIC_TURNSTILE_SITE_KEY=""',
+        'TURNSTILE_SECRET_KEY=""',
+      );
+    }
+    if (opts.mailerProvider !== "none") {
+      lines.push("", `# Email delivery (${opts.mailerProvider})`, `MAIL_PROVIDER="${opts.mailerProvider}"`, 'MAIL_FROM="Magic App <noreply@example.com>"');
+      if (opts.mailerProvider === "resend") lines.push('RESEND_API_KEY=""');
+      if (opts.mailerProvider === "smtp") {
+        lines.push('SMTP_HOST=""', 'SMTP_PORT="587"', 'SMTP_SECURE="false"', 'SMTP_USER=""', 'SMTP_PASSWORD=""');
+      }
+    }
   }
 
   lines.push("");
@@ -578,9 +656,17 @@ function stripAgentsMdModuleBlock(source: string, moduleId: ModuleId): string {
   if (endIndex === -1) return source;
 
   let sliceEnd = endIndex + end.length;
-  // Swallow one trailing blank line so we don't leave a double gap.
   if (source[sliceEnd] === "\n") sliceEnd++;
+  return source.slice(0, startIndex) + source.slice(sliceEnd);
+}
 
+function stripAgentsMdSkillBlock(source: string, skillId: SkillId): string {
+  const start = `<!-- SKILL:${skillId}:start -->`;
+  const end = `<!-- SKILL:${skillId}:end -->`;
+  const startIndex = source.indexOf(start);
+  const endIndex = source.indexOf(end);
+  if (startIndex === -1 || endIndex === -1) return source;
+  const sliceEnd = endIndex + end.length + (source[endIndex + end.length] === "\n" ? 1 : 0);
   return source.slice(0, startIndex) + source.slice(sliceEnd);
 }
 
@@ -609,6 +695,7 @@ export function updateAgentsMd(
   colorThemeId: string,
   mode: ThemeMode,
   dryRun: boolean,
+  skills = new Set<SkillId>(SKILL_IDS),
 ): boolean {
   const agentsPath = path.join(ROOT, "AGENTS.md");
   if (!fs.existsSync(agentsPath)) return false;
@@ -625,6 +712,10 @@ export function updateAgentsMd(
   }
   for (const moduleId of ["redis", "minio"] as const) {
     if (!modules.has(moduleId)) droppedModules.add(moduleId);
+  }
+
+  for (const skillId of SKILL_IDS) {
+    if (!skills.has(skillId)) content = stripAgentsMdSkillBlock(content, skillId);
   }
 
   content = stripAgentsMdEnvRows(content, droppedModules);
@@ -732,6 +823,7 @@ const MODULE_OPTIONS: { value: ModuleId; label: string; hint: string }[] = [
 // pass, since nothing *else* imports them, but they're 100% dead code).
 const AUTH_PATHS = [
   "app/(auth)",
+  "lib/mailer.ts",
   "app/(app)",
   "app/api/auth",
   "lib/auth.ts",
@@ -756,11 +848,25 @@ const REDIS_PATHS = ["lib/redis.ts"];
 const MINIO_PATHS = ["lib/minio.ts"];
 
 const DEP_REMOVALS: Record<Exclude<ModuleId, "docker">, string[]> = {
-  auth: ["better-auth"],
+  auth: ["better-auth", "@marsidev/react-turnstile", "resend", "nodemailer", "@types/nodemailer"],
   trpc: ["@trpc/server", "@trpc/client", "@trpc/tanstack-react-query", "@tanstack/react-query", "superjson"],
   redis: ["ioredis"],
   minio: ["minio"],
 };
+
+const AUTH_FEATURE_FILES = [
+  "lib/auth.ts",
+  "lib/auth-client.ts",
+  "components/auth/login-form.tsx",
+  "components/auth/register-form.tsx",
+];
+const SKILL_IDS: SkillId[] = [
+  "better-auth",
+  "shadcn-ui",
+  "ui-design",
+  "backend-conventions",
+  "frontend-conventions",
+];
 
 // ---------------------------------------------------------------------------
 // Apply
@@ -779,6 +885,9 @@ export function applySelection(
   colorThemeId: string,
   mode: ThemeMode,
   dryRun: boolean,
+  authMethods = new Set<AuthMethod>(["username", "google", "captcha"]),
+  mailerProvider: MailerProvider = "console",
+  skills = new Set<SkillId>(SKILL_IDS),
 ): ApplyResult {
   const keepAuth = modules.has("auth");
   const keepTrpc = modules.has("trpc");
@@ -792,6 +901,46 @@ export function applySelection(
   const removedDeps: string[] = [];
   const notes: string[] = [];
 
+
+  if (keepAuth) {
+    for (const method of ["username", "google", "captcha"] as const) {
+      if (authMethods.has(method)) continue;
+      for (const file of AUTH_FEATURE_FILES) {
+        if (stripMagicBlocksFromFile(file, method, dryRun)) editedFiles.push(file);
+      }
+    }
+    if (!authMethods.has("username") && downgradeLoginFormToEmailOnly(dryRun)) {
+      editedFiles.push("components/auth/login-form.tsx");
+    }
+    if (!authMethods.has("captcha")) {
+      removedDeps.push(...removeDependencies(["@marsidev/react-turnstile"], dryRun));
+    }
+    if (mailerProvider === "none") {
+      for (const file of ["lib/auth.ts", "lib/mailer.ts"]) {
+        if (file === "lib/mailer.ts") {
+          if (removeIfExists(file, dryRun)) removedPaths.push(file);
+        } else if (stripMagicBlocksFromFile(file, "mailer", dryRun)) {
+          editedFiles.push(file);
+        }
+      }
+      removedDeps.push(...removeDependencies(["resend", "nodemailer", "@types/nodemailer"], dryRun));
+    } else {
+      for (const provider of ["resend", "smtp"] as const) {
+        if (provider === mailerProvider) continue;
+        if (stripMagicBlocksFromFile("lib/mailer.ts", `mailer-${provider}`, dryRun)) {
+          editedFiles.push("lib/mailer.ts");
+        }
+        const dependencies = provider === "resend" ? ["resend"] : ["nodemailer", "@types/nodemailer"];
+        removedDeps.push(...removeDependencies(dependencies, dryRun));
+      }
+    }
+  }
+
+  for (const skill of SKILL_IDS) {
+    if (!skills.has(skill) && removeIfExists(`skills/${skill}.md`, dryRun)) {
+      removedPaths.push(`skills/${skill}.md`);
+    }
+  }
   if (!keepAuth) {
     removedPaths.push(...removeAll(AUTH_PATHS, dryRun));
     removedDeps.push(...removeDependencies(DEP_REMOVALS.auth, dryRun));
@@ -864,7 +1013,15 @@ export function applySelection(
     );
   }
 
-  const envContent = buildEnvExample({ keepAuth, keepDatabase, keepRedis, keepMinio, keepDockerCompose });
+  const envContent = buildEnvExample({
+    keepAuth,
+    keepDatabase,
+    keepRedis,
+    keepMinio,
+    keepDockerCompose,
+    authMethods,
+    mailerProvider,
+  });
   writeEnvExample(envContent, dryRun);
   editedFiles.push(".env.example");
 
@@ -877,7 +1034,7 @@ export function applySelection(
   const themeApplied = applyThemeSelection(colorThemeId, mode, dryRun);
   if (themeApplied) editedFiles.push("lib/themes.ts");
 
-  const agentsMdUpdated = updateAgentsMd(modules, colorThemeId, mode, dryRun);
+  const agentsMdUpdated = updateAgentsMd(modules, colorThemeId, mode, dryRun, skills);
   if (agentsMdUpdated) editedFiles.push("AGENTS.md");
 
   return { removedPaths, editedFiles, removedDeps, notes, dockerCompose };
@@ -903,6 +1060,7 @@ function buildNextSteps(pm: PackageManager, modules: Set<ModuleId>): string[] {
     steps.push("docker compose up -d");
   }
   if (keepTrpc || keepAuth) {
+
     steps.push(`${execCmd(pm)} prisma generate && ${execCmd(pm)} prisma db push`);
   }
   steps.push(pm === "pnpm" ? "pnpm dev" : `${pm} run dev`);
@@ -954,6 +1112,49 @@ async function main(): Promise<void> {
     !modules.has("docker") && (modules.has("redis") || modules.has("minio"));
   if (keepDockerImplied) modules.add("docker");
 
+  const authMethods = modules.has("auth")
+    ? new Set(
+        checkCancel(
+          await multiselect<AuthMethod>({
+            message: "Which optional authentication methods should be included?",
+            options: [
+              { value: "username", label: "Username", hint: "allow email or username sign-in" },
+              { value: "google", label: "Google OAuth", hint: "requires Google OAuth credentials" },
+              { value: "captcha", label: "Cloudflare Turnstile", hint: "protect sign-in and registration" },
+            ],
+            initialValues: ["username", "google", "captcha"],
+            required: false,
+          }),
+        ),
+      )
+    : new Set<AuthMethod>();
+
+  const mailerProvider = modules.has("auth")
+    ? checkCancel(
+        await select<MailerProvider>({
+          message: "Which email provider should ship?",
+          options: [
+            { value: "resend", label: "Resend", hint: "hosted email API (recommended)" },
+            { value: "smtp", label: "SMTP", hint: "send through any SMTP server" },
+            { value: "console", label: "Console", hint: "log emails locally; no delivery" },
+            { value: "none", label: "None", hint: "omit password-reset and verification emails" },
+          ],
+          initialValue: "console",
+        }),
+      )
+    : "none";
+
+  const skills = new Set(
+    checkCancel(
+      await multiselect<SkillId>({
+        message: "Which focused AI-agent skills should be included?",
+        options: SKILL_IDS.map((value) => ({ value, label: value })),
+        initialValues: SKILL_IDS,
+        required: false,
+      }),
+    ),
+  );
+
   const colorThemeId = checkCancel(
     await select<string>({
       message: "Which color theme should ship as the default?",
@@ -991,6 +1192,17 @@ async function main(): Promise<void> {
         : pc.dim("(none — bare Next.js + Tailwind + shadcn/ui base)")
     }`,
     `Theme: ${pc.cyan(colorThemeId)} / ${pc.cyan(mode)}`,
+    modules.has("auth")
+      ? `Auth options: ${
+          authMethods.size > 0
+            ? [...authMethods].sort().map((method) => pc.cyan(method)).join(", ")
+            : pc.dim("email/password only")
+        }`
+      : undefined,
+    modules.has("auth") ? `Mailer: ${pc.cyan(mailerProvider)}` : undefined,
+    `Skills: ${
+      skills.size > 0 ? [...skills].sort().map((skill) => pc.cyan(skill)).join(", ") : pc.dim("(none)")
+    }`,
   ];
   note(summaryLines.join("\n"), "Summary");
 
@@ -1005,7 +1217,7 @@ async function main(): Promise<void> {
 
   const s = spinner();
   s.start(DRY_RUN ? "Planning changes..." : "Applying your selection...");
-  const result = applySelection(modules, colorThemeId, mode, DRY_RUN);
+  const result = applySelection(modules, colorThemeId, mode, DRY_RUN, authMethods, mailerProvider, skills);
   s.stop(DRY_RUN ? "Plan complete." : "Selection applied.");
 
   const actionLines: string[] = [];

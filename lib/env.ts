@@ -55,10 +55,29 @@ export const env = createEnv({
     MINIO_ACCESS_KEY: z.string().min(1).optional(),
     MINIO_SECRET_KEY: z.string().min(1).optional(),
     MINIO_BUCKET: z.string().min(1).optional(),
+
+    // --- Captcha — module: auth-method "captcha" (Cloudflare Turnstile) -----
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+
+    // --- Mailer (module: mailer) ---------------------------------------------
+    MAIL_PROVIDER: z.enum(["resend", "smtp", "console"]).optional(),
+    MAIL_FROM: z.string().min(1).optional(),
+    RESEND_API_KEY: z.string().min(1).optional(),
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().positive().optional(),
+    SMTP_SECURE: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => v === "true"),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASSWORD: z.string().optional(),
   },
 
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1).default("http://localhost:3000"),
+    // Client-side Turnstile site key — safe to expose (paired server-side
+    // with TURNSTILE_SECRET_KEY, which never leaves the server).
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   },
 
   // Next.js inlines `NEXT_PUBLIC_*` references at build time via static
@@ -66,6 +85,7 @@ export const env = createEnv({
   // spread from `process.env` dynamically — see the t3-env docs for why.
   experimental__runtimeEnv: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   },
 
   // Empty strings in `.env` (e.g. `GITHUB_CLIENT_ID=`) become `undefined`

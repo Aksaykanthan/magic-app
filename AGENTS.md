@@ -17,6 +17,7 @@ Canonical onboarding doc for **magic-nextjs-template** — read this first, whet
 11. [Docker services](#11-docker-services)
 12. [Module selection & scaffolding](#12-module-selection--scaffolding)
 13. [Commands cheat-sheet](#13-commands-cheat-sheet)
+14. [Focused AI-agent skills](#14-focused-ai-agent-skills)
 
 ---
 
@@ -464,3 +465,36 @@ Re-running is safe: every deletion/edit guards on `fs.existsSync`/content-diff f
 | `bun run docker:up` | `docker compose up -d` — start postgres/redis/minio. |
 | `bun run docker:down` | `docker compose down` — stop the docker services. |
 | `bun run docker:logs` | `docker compose logs -f` — tail docker service logs. |
+
+---
+## 14. Focused AI-agent skills
+
+`AGENTS.md` is the canonical project overview. `skills/*.md` are deliberately
+smaller, load-on-demand deep dives: read the one matching the task instead of
+loading unrelated conventions. `bun run setup` lets the project owner retain
+only the skills useful to this application; do not link to or depend on a skill
+file that is absent after setup.
+
+<!-- SKILL:better-auth:start -->
+- [`skills/better-auth.md`](skills/better-auth.md) — Better Auth server/client
+  boundaries, username and OAuth flows, Turnstile, mailer hooks, tRPC
+  protection, and `proxy.ts` guards.
+<!-- SKILL:better-auth:end -->
+<!-- SKILL:shadcn-ui:start -->
+- [`skills/shadcn-ui.md`](skills/shadcn-ui.md) — shadcn/ui on **Base UI** (not
+  Radix), its `render` polymorphism API, sidebar composition, Lucide, and
+  Sonner.
+<!-- SKILL:shadcn-ui:end -->
+<!-- SKILL:ui-design:start -->
+- [`skills/ui-design.md`](skills/ui-design.md) — color-preset/mode theming,
+  CSS tokens, radius scale, typography, spacing, and visual conventions.
+<!-- SKILL:ui-design:end -->
+<!-- SKILL:backend-conventions:start -->
+- [`skills/backend-conventions.md`](skills/backend-conventions.md) — tRPC,
+  Prisma, Redis, MinIO, logging, mailer, and validated environment access.
+<!-- SKILL:backend-conventions:end -->
+<!-- SKILL:frontend-conventions:start -->
+- [`skills/frontend-conventions.md`](skills/frontend-conventions.md) — App
+  Router route groups, provider composition, server/client boundaries, forms,
+  and the dashboard shell.
+<!-- SKILL:frontend-conventions:end -->
