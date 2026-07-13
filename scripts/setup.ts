@@ -614,7 +614,7 @@ export function buildDockerCompose(opts: { keepDatabase: boolean; keepRedis: boo
   }
 
   return [
-    "name: magic-nextjs-template",
+    "name: magic-app",
     "",
     "services:",
     services.join("\n\n"),
@@ -778,7 +778,7 @@ export function reinitGit(dryRun: boolean): "reinitialized" | "skipped" | "faile
     fs.rmSync(path.join(ROOT, ".git"), { recursive: true, force: true });
     execSync("git init", { cwd: ROOT, stdio: "ignore" });
     execSync("git add -A", { cwd: ROOT, stdio: "ignore" });
-    execSync('git commit -m "Initial commit from magic-nextjs-template"', { cwd: ROOT, stdio: "ignore" });
+    execSync('git commit -m "Initial commit from magic-app"', { cwd: ROOT, stdio: "ignore" });
     return "reinitialized";
   } catch {
     return "failed";

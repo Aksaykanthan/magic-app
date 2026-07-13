@@ -1,7 +1,7 @@
 {
   "name": "create-magic-app",
   "version": "0.1.0",
-  "description": "Scaffold a new project from the magic-nextjs-template — modular Next.js, auth, tRPC, Prisma, Redis, MinIO, multi-theme shadcn/Base UI.",
+  "description": "Scaffold a new project from magic-app — modular Next.js, auth, tRPC, Prisma, Redis, MinIO, multi-theme shadcn/Base UI.",
   "type": "module",
   "license": "MIT",
   "bin": {
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Aksaykanthan/magic-nextjs-template.git",
+    "url": "https://github.com/Aksaykanthan/magic-app.git",
     "directory": "create-magic-app"
   },
   "keywords": [

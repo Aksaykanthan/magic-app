@@ -1,4 +1,4 @@
-# magic-nextjs-template
+# magic-app
 
 A modular Next.js 16 starter — pick the modules you need, get everything else pre-wired.
 
@@ -10,7 +10,7 @@ See **[AGENTS.md](./AGENTS.md)** for the full architecture, conventions, and mod
 
 ```bash
 # scaffold a new project from this template
-npx github:Aksaykanthan/magic-nextjs-template
+npx github:Aksaykanthan/magic-app
 
 # already have a checkout? pick your modules in place
 bun run setup

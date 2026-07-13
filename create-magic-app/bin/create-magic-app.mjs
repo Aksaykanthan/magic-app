@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * create-magic-app — scaffolds a new project from magic-nextjs-template.
+ * create-magic-app — scaffolds a new project from magic-app.
  *
  * Two ways this gets run today (both work identically, both end up here):
- *   npx github:Aksaykanthan/magic-nextjs-template      (works right now, no npm publish needed)
- *   npx create-magic-app@latest                        (works once this package is `npm publish`ed
+ *   npx github:Aksaykanthan/magic-app      (works right now, no npm publish needed)
+ *   npx create-magic-app@latest            (works once this package is `npm publish`ed
  *                                                        from the create-magic-app/ directory)
  *
  * What it does:
@@ -41,7 +41,7 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 
-const TEMPLATE_REPO = "https://github.com/Aksaykanthan/magic-nextjs-template.git";
+const TEMPLATE_REPO = "https://github.com/Aksaykanthan/magic-app.git";
 
 function checkCancel(value) {
   if (isCancel(value)) {

@@ -1,12 +1,12 @@
 # create-magic-app
 
-Scaffolds a new project from [magic-nextjs-template](https://github.com/Aksaykanthan/magic-nextjs-template) — a modular Next.js 16 starter with auth, tRPC, Prisma, Redis, MinIO, shadcn/ui on Base UI, and a multi-theme design system, all select-your-modules at install time.
+Scaffolds a new project from [magic-app](https://github.com/Aksaykanthan/magic-app) — a modular Next.js 16 starter with auth, tRPC, Prisma, Redis, MinIO, shadcn/ui on Base UI, and a multi-theme design system, all select-your-modules at install time.
 
 ## Usage
 
 ```bash
 # works today — no npm publish required
-npx github:Aksaykanthan/magic-nextjs-template
+npx github:Aksaykanthan/magic-app
 
 # works once this package is published to npm from this directory
 npx create-magic-app@latest

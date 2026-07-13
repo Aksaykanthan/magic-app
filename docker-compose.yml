@@ -1,4 +1,4 @@
-name: magic-nextjs-template
+name: magic-app
 
 services:
   postgres:
